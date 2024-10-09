@@ -16,7 +16,7 @@ pipeline {
 
 	stages {
 
-		stage('BUILD') {
+		stage('Build with Maven') {
 			steps {
 				sh 'mvn clean install -DskipTests'
 			}
@@ -28,19 +28,19 @@ pipeline {
 			}
 		}
 
-		stage('UNIT TEST') {
+		stage('Unit test') {
 			steps {
 				sh 'mvn test'
 			}
 		}
 
-		stage('INTEGRATION TEST') {
+		stage('Integration tests') {
 			steps {
 				sh 'mvn verify -DskipUnitTests'
 			}
 		}
 
-		stage('CODE ANALYSIS WITH CHECKSTYLE') {
+		stage('Code analysis with mvn checkstyle') {
 			steps {
 				sh 'mvn checkstyle:checkstyle'
 			}
@@ -51,7 +51,7 @@ pipeline {
 			}
 		}
 
-		stage('CODE ANALYSIS with SONARQUBE') {
+		stage('Code analysis with SonarQube') {
 
 			environment {
 				scannerHome = tool "${SONARSCANNER}"
