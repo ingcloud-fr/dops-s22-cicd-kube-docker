@@ -1,14 +1,20 @@
+def COLOR_MAP = [
+  'SUCCESS': 'good',  // Couleur verte pour succès dans la notification Slack
+  'FAILURE': 'danger', // Couleur rouge pour échec dans la notification Slack
+]
+
 pipeline {
 
   agent any
   
   environment {
-    my_registry = "ingcloudfr/vprofileapp-k8s"
-    my_registry_credentials = "ingcloudfr-dockerhub"
-    SONARSCANNER = 'sonarscanner4.7' // SonarQube scanner pour analyse de code
-    SONARSERVER = 'my-sonar-server'  // Serveur SonarQube pour analyse
-    DOCKER_IMAGE_TAG = "V${BUILD_NUMBER}"
-    FULL_IMAGE_NAME = "${my_registry}:${DOCKER_IMAGE_TAG}"
+    MY_REGISTRY = "ingcloudfr/vprofileapp-k8s"                    // Nom du registre Docker
+    MY_REGISTRY_CREDENTIALS = "ingcloudfr-dockerhub"              // Identifiant des credentials pour DockerHub
+    SONARSCANNER = 'sonarscanner4.7'                              // SonarQube scanner pour analyse de code
+    SONARSERVER = 'my-sonar-server'                               // Serveur SonarQube pour analyse
+    DOCKER_IMAGE_TAG = "V${BUILD_NUMBER}"                         // Tag Docker basé sur le numéro de build
+    FULL_IMAGE_NAME = "${MY_REGISTRY}:${DOCKER_IMAGE_TAG}"        // Nom complet de l'image Docker avec tag
+    SLACK_CHANNEL = '#jenkins-cicd'                               // Canal Slack pour les notifications
   }
 
   stages {
@@ -94,10 +100,10 @@ pipeline {
       }
     }
 
-    stage('Upload image on dockerhub') {
+    stage('Upload image on DockerHub') {
       steps {
         script {
-          docker.withRegistry('', my_registry_credentials) {
+          docker.withRegistry('', MY_REGISTRY_CREDENTIALS) {
             dockerImage.push(DOCKER_IMAGE_TAG)
             dockerImage.push("latest")
           }
@@ -123,8 +129,14 @@ pipeline {
 
   post {
     always {
+      // Nettoyage Docker
       echo 'Cleaning up...'
       sh 'docker system prune -f'
+      // Notifications Slack après l'exécution du pipeline (réussite ou échec)
+      echo 'Slack Notifications'
+      slackSend channel: "${SLACK_CHANNEL}", // Envoi d'une notification dans le canal Slack
+      color: COLOR_MAP[currentBuild.currentResult], // Couleur basée sur le résultat du build
+      message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}" // Message avec les détails du job
     }
 
     success {
@@ -133,7 +145,7 @@ pipeline {
 
     failure {
       echo "Pipeline failed: ${env.BUILD_URL}"
-      // Example of Slack notification in case of failure
+      // Exemple de notification Slack en cas d'échec
       slackSend(channel: '#jenkins', color: 'danger', message: "Pipeline failed: ${env.BUILD_URL}")
     }
   }
