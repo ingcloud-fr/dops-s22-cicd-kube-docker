@@ -105,7 +105,7 @@ pipeline {
 				label 'kops'
 				}
 			steps {
-				sh "helm upgrade --install --force vprofile-stak helm/vprofilecharts --set appimge=${my_registry}:V${BUILD_NUMBER} --namespace prod"
+				sh "helm upgrade --install --force vprofile-stack helm/vprofilecharts --set appimage=${my_registry}:V${BUILD_NUMBER} --namespace prod"
 			}
 		}
 	}
